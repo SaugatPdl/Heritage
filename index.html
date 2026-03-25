@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heritage Mapping Nepal | Mappers Nepal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .app-frame {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .leaflet-container {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: #f3f4f6 !important;
+        }
+
+        /* Rich Content Card Popups */
+        .custom-rich-popup .leaflet-popup-content-wrapper {
+            padding: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .custom-rich-popup .leaflet-popup-content {
+            margin: 0 !important;
+            width: 420px !important;
+        }
+        .custom-rich-popup .leaflet-popup-tip-container { display: none; }
+
+        /* Custom Marker Container */
+        .custom-heritage-marker-container {
+            background: none !important;
+            border: none !important;
+        }
+
+        /* Marker Clusters */
+        .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+            background-color: rgba(45, 154, 145, 0.2) !important;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .marker-cluster div {
+            background-color: #2d9a91 !important;
+            color: white !important;
+            font-weight: 700 !important;
+        }
+
+        /* Hide scrollbars but allow scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 0; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* Pulse for GPS */
+        .pulse {
+          animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* OpenLayers Popup */
+        .ol-popup {
+            position: absolute;
+            background-color: transparent;
+            filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+            padding: 0;
+            border-radius: 0;
+            bottom: 45px;
+            left: -210px; /* Center 420px popup */
+            z-index: 1000;
+        }
+        .ol-popup:after, .ol-popup:before {
+            top: 100%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+        .ol-popup:after {
+            border-top-color: white;
+            border-width: 10px;
+            left: 50%;
+            margin-left: -10px;
+        }
+        .ol-popup:before {
+            border-top-color: #cccccc;
+            border-width: 11px;
+            left: 50%;
+            margin-left: -11px;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react/": "https://esm.sh/react@19.0.0/",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.463.0?external=react",
+    "leaflet": "https://esm.sh/leaflet@1.9.4",
+    "react-leaflet": "https://esm.sh/react-leaflet@5.0.0?external=react,react-dom,leaflet",
+    "leaflet.markercluster": "https://esm.sh/leaflet.markercluster@1.5.3?external=leaflet",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.3",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "ol/": "https://esm.sh/ol@^10.7.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root" class="app-frame"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

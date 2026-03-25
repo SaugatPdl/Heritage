@@ -1,0 +1,7 @@
+{
+  "name": "Nepal Heritage GIS",
+  "description": "An interactive WebGIS map of Nepal's historical, cultural, and religious sites featuring category filtering, clustering, and rich site details.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

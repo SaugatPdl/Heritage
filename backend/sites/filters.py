@@ -20,5 +20,5 @@ class SiteFilter(django_filters.FilterSet):
             bbox_polygon = Polygon.from_bbox((min_lon, min_lat, max_lon, max_lat))
             bbox_polygon.srid = 4326
             return queryset.filter(location__within=bbox_polygon)
-        except (ValueError, Exception):
+        except (ValueError, TypeError):
             return queryset

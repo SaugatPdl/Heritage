@@ -459,11 +459,14 @@
   }
 
   /* ── Fly to a site marker ──────────────────────────────── */
+  const FLY_DURATION_S   = 1.2;          // Leaflet flyTo duration in seconds
+  const FLY_DELAY_MS     = FLY_DURATION_S * 1000 + 100; // wait for animation + buffer
+
   function flyToSite(id) {
     const marker = markers[id];
     if (!marker) return;
-    map.flyTo(marker.getLatLng(), 14, { duration: 1.2 });
-    setTimeout(() => marker.openPopup(), 1300);
+    map.flyTo(marker.getLatLng(), 14, { duration: FLY_DURATION_S });
+    setTimeout(() => marker.openPopup(), FLY_DELAY_MS);
 
     // highlight sidebar item
     document.querySelectorAll('.site-item').forEach(el => el.classList.remove('active'));

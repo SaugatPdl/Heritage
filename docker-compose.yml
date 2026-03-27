@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_DB: ${DB_NAME:-heritage_db}
+      POSTGRES_USER: ${DB_USER:-heritage_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-heritage_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-heritage_user} -d ${DB_NAME:-heritage_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed_sites &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-dev-key-change-in-production}
+      DEBUG: ${DEBUG:-True}
+      DB_NAME: ${DB_NAME:-heritage_db}
+      DB_USER: ${DB_USER:-heritage_user}
+      DB_PASSWORD: ${DB_PASSWORD:-heritage_pass}
+      DB_HOST: db
+      DB_PORT: 5432
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+
+volumes:
+  postgres_data:

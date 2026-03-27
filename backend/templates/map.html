@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heritage Sites of Nepal</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: #0f0f1a;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    #sidebar {
+      width: 300px;
+      min-width: 300px;
+      background: #1a1a2e;
+      color: #e0e0f0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+
+    #sidebar-header {
+      padding: 20px 16px 14px;
+      background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    #sidebar-header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #e2c97e;
+      letter-spacing: 0.03em;
+      margin-bottom: 2px;
+    }
+
+    #sidebar-header p {
+      font-size: 0.75rem;
+      color: rgba(224,224,240,0.55);
+    }
+
+    #controls {
+      padding: 12px 16px;
+      background: #16213e;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    #controls label {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(224,224,240,0.5);
+      margin-bottom: 6px;
+    }
+
+    #category-filter {
+      width: 100%;
+      padding: 8px 10px;
+      background: #0f0f1a;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: #e0e0f0;
+      font-size: 0.85rem;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+      transition: border-color 0.2s;
+    }
+
+    #category-filter:focus {
+      outline: none;
+      border-color: #e2c97e;
+    }
+
+    #site-count {
+      margin-top: 8px;
+      font-size: 0.72rem;
+      color: rgba(224,224,240,0.45);
+    }
+
+    #site-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    #site-list-container::-webkit-scrollbar { width: 4px; }
+    #site-list-container::-webkit-scrollbar-track { background: transparent; }
+    #site-list-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+    .site-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-left: 3px solid transparent;
+    }
+
+    .site-item:hover {
+      background: rgba(255,255,255,0.05);
+      border-left-color: #e2c97e;
+    }
+
+    .site-item.active {
+      background: rgba(226,201,126,0.1);
+      border-left-color: #e2c97e;
+    }
+
+    .site-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .site-info { flex: 1; min-width: 0; }
+
+    .site-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #e0e0f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .site-location {
+      font-size: 0.72rem;
+      color: rgba(224,224,240,0.45);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .category-badge {
+      font-size: 0.62rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+
+    /* ── Loading / empty states ──────────────────────────── */
+    #loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 12px;
+      color: rgba(224,224,240,0.5);
+      font-size: 0.85rem;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(226,201,126,0.2);
+      border-top-color: #e2c97e;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #no-results {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      gap: 8px;
+      color: rgba(224,224,240,0.4);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    #no-results span { font-size: 2rem; }
+
+    /* ── Map ─────────────────────────────────────────────── */
+    #map {
+      flex: 1;
+      z-index: 1;
+    }
+
+    /* ── Leaflet popup overrides ─────────────────────────── */
+    .leaflet-popup-content-wrapper {
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .leaflet-popup-content {
+      margin: 0;
+      min-width: 220px;
+      max-width: 280px;
+    }
+
+    .popup-inner {
+      padding: 14px 16px;
+    }
+
+    .popup-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .popup-category {
+      display: inline-block;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .popup-location {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .popup-desc {
+      font-size: 0.8rem;
+      color: #444;
+      line-height: 1.5;
+      margin-top: 6px;
+      border-top: 1px solid #f0f0f0;
+      padding-top: 8px;
+    }
+
+    .popup-unesco {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      color: #b07d00;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
+    /* ── Category colour palette ─────────────────────────── */
+    .cat-hindu_temple   { background: #ff6b35; color: #fff; }
+    .cat-buddhist       { background: #9c27b0; color: #fff; }
+    .cat-palace_fort    { background: #1565c0; color: #fff; }
+    .cat-archaeological { background: #2e7d32; color: #fff; }
+    .cat-unesco         { background: #b07d00; color: #fff; }
+    .cat-natural_religious { background: #00695c; color: #fff; }
+    .cat-religious_site { background: #c62828; color: #fff; }
+    .cat-other          { background: #546e7a; color: #fff; }
+
+    .icon-hindu_temple   { background: rgba(255,107,53,0.2);  color: #ff6b35; }
+    .icon-buddhist       { background: rgba(156,39,176,0.2);  color: #9c27b0; }
+    .icon-palace_fort    { background: rgba(21,101,192,0.2);  color: #1565c0; }
+    .icon-archaeological { background: rgba(46,125,50,0.2);   color: #2e7d32; }
+    .icon-unesco         { background: rgba(176,125,0,0.2);   color: #b07d00; }
+    .icon-natural_religious { background: rgba(0,105,92,0.2); color: #00695c; }
+    .icon-religious_site { background: rgba(198,40,40,0.2);   color: #c62828; }
+    .icon-other          { background: rgba(84,110,122,0.2);  color: #546e7a; }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 640px) {
+      #sidebar { width: 260px; min-width: 260px; }
+    }
+  </style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <h1>🏛 Heritage Sites of Nepal</h1>
+    <p>Explore ancient temples, stupas &amp; palaces</p>
+  </div>
+
+  <div id="controls">
+    <label for="category-filter">Filter by Category</label>
+    <select id="category-filter">
+      <option value="">All Categories</option>
+      <option value="hindu_temple">Hindu Temple</option>
+      <option value="buddhist">Buddhist</option>
+      <option value="palace_fort">Palace / Fort</option>
+      <option value="archaeological">Archaeological</option>
+      <option value="unesco">UNESCO Heritage</option>
+      <option value="natural_religious">Natural / Religious</option>
+      <option value="religious_site">Religious Site</option>
+      <option value="other">Other</option>
+    </select>
+    <div id="site-count"></div>
+  </div>
+
+  <div id="site-list-container">
+    <div id="loading">
+      <div class="spinner"></div>
+      <span>Loading heritage sites…</span>
+    </div>
+    <div id="no-results">
+      <span>🔍</span>
+      <p>No sites match the selected filter.</p>
+    </div>
+    <ul id="site-list" style="list-style:none;"></ul>
+  </div>
+</aside>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN2/WXo=" crossorigin=""></script>
+<script>
+  /* ── Map setup ─────────────────────────────────────────── */
+  const map = L.map('map', {
+    center: [28.0, 84.0],
+    zoom: 7,
+    zoomControl: true,
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map);
+
+  /* ── State ─────────────────────────────────────────────── */
+  let allFeatures  = [];
+  let markers      = {};   // id → L.Marker
+  let activeItemId = null;
+
+  /* ── Category helpers ──────────────────────────────────── */
+  const CATEGORY_LABELS = {
+    hindu_temple:      'Hindu Temple',
+    buddhist:          'Buddhist',
+    palace_fort:       'Palace/Fort',
+    archaeological:    'Archaeological',
+    unesco:            'UNESCO Heritage',
+    natural_religious: 'Natural/Religious',
+    religious_site:    'Religious Site',
+    other:             'Other',
+  };
+
+  const CATEGORY_EMOJI = {
+    hindu_temple:      '🛕',
+    buddhist:          '☸️',
+    palace_fort:       '🏰',
+    archaeological:    '🏺',
+    unesco:            '🌍',
+    natural_religious: '🌿',
+    religious_site:    '⛩️',
+    other:             '📍',
+  };
+
+  function catLabel(cat) { return CATEGORY_LABELS[cat] || cat; }
+  function catEmoji(cat) { return CATEGORY_EMOJI[cat]  || '📍'; }
+
+  /* ── Custom marker icon ────────────────────────────────── */
+  function makeIcon(category) {
+    const emoji = catEmoji(category);
+    const colors = {
+      hindu_temple:      '#ff6b35',
+      buddhist:          '#9c27b0',
+      palace_fort:       '#1565c0',
+      archaeological:    '#2e7d32',
+      unesco:            '#b07d00',
+      natural_religious: '#00695c',
+      religious_site:    '#c62828',
+      other:             '#546e7a',
+    };
+    const color = colors[category] || '#546e7a';
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+        <filter id="s"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.35"/></filter>
+        <path filter="url(#s)" fill="${color}"
+          d="M18 2C10.3 2 4 8.3 4 16c0 10 14 26 14 26S32 26 32 16C32 8.3 25.7 2 18 2z"/>
+        <circle cx="18" cy="16" r="10" fill="white"/>
+        <text x="18" y="20" text-anchor="middle" font-size="13">${emoji}</text>
+      </svg>`;
+    return L.divIcon({
+      html: svg,
+      className: '',
+      iconSize:   [36, 44],
+      iconAnchor: [18, 44],
+      popupAnchor:[0, -46],
+    });
+  }
+
+  /* ── Popup HTML ────────────────────────────────────────── */
+  function buildPopup(props) {
+    const cat   = props.category || 'other';
+    const label = catLabel(cat);
+    const desc  = props.description
+      ? props.description.length > 180
+        ? props.description.slice(0, 177) + '…'
+        : props.description
+      : '';
+    const locLine = props.location_name
+      ? `<div class="popup-location">📍 ${props.location_name}</div>`
+      : '';
+    const unescoLine = props.unesco_status
+      ? `<div class="popup-unesco">🌍 UNESCO World Heritage Site</div>`
+      : '';
+    return `
+      <div class="popup-inner">
+        <div class="popup-name">${props.name}</div>
+        <span class="popup-category cat-${cat}">${label}</span>
+        ${locLine}
+        ${unescoLine}
+        ${desc ? `<div class="popup-desc">${desc}</div>` : ''}
+      </div>`;
+  }
+
+  /* ── Sidebar list item ─────────────────────────────────── */
+  function buildListItem(feature) {
+    const { id, name, category, location_name } = feature.properties;
+    const cat   = category || 'other';
+    const label = catLabel(cat);
+    const emoji = catEmoji(cat);
+    const li = document.createElement('li');
+    li.className = 'site-item';
+    li.dataset.id = id;
+    li.innerHTML = `
+      <div class="site-icon icon-${cat}">${emoji}</div>
+      <div class="site-info">
+        <div class="site-name">${name}</div>
+        <div class="site-location">${location_name || 'Nepal'}</div>
+      </div>
+      <span class="category-badge cat-${cat}">${label}</span>`;
+    li.addEventListener('click', () => flyToSite(id));
+    return li;
+  }
+
+  /* ── Fly to a site marker ──────────────────────────────── */
+  function flyToSite(id) {
+    const marker = markers[id];
+    if (!marker) return;
+    map.flyTo(marker.getLatLng(), 14, { duration: 1.2 });
+    setTimeout(() => marker.openPopup(), 1300);
+
+    // highlight sidebar item
+    document.querySelectorAll('.site-item').forEach(el => el.classList.remove('active'));
+    const item = document.querySelector(`.site-item[data-id="${id}"]`);
+    if (item) {
+      item.classList.add('active');
+      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    activeItemId = id;
+  }
+
+  /* ── Render features onto map + sidebar ───────────────── */
+  function renderFeatures(features) {
+    // clear existing markers
+    Object.values(markers).forEach(m => map.removeLayer(m));
+    markers = {};
+    const list = document.getElementById('site-list');
+    list.innerHTML = '';
+
+    features.forEach(feature => {
+      const props = feature.properties;
+      const [lng, lat] = feature.geometry.coordinates;
+      const id = props.id;
+
+      const marker = L.marker([lat, lng], { icon: makeIcon(props.category || 'other') })
+        .bindPopup(buildPopup(props), { maxWidth: 300 })
+        .addTo(map);
+
+      marker.on('click', () => {
+        document.querySelectorAll('.site-item').forEach(el => el.classList.remove('active'));
+        const item = document.querySelector(`.site-item[data-id="${id}"]`);
+        if (item) {
+          item.classList.add('active');
+          item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        activeItemId = id;
+      });
+
+      markers[id] = marker;
+      list.appendChild(buildListItem(feature));
+    });
+
+    // update count
+    const total = allFeatures.length;
+    const shown = features.length;
+    const countEl = document.getElementById('site-count');
+    if (total !== shown) {
+      countEl.textContent = `Showing ${shown} of ${total} sites`;
+    } else {
+      countEl.textContent = `${total} site${total !== 1 ? 's' : ''} total`;
+    }
+
+    // no-results
+    document.getElementById('no-results').style.display = features.length === 0 ? 'flex' : 'none';
+  }
+
+  /* ── Category filter ───────────────────────────────────── */
+  document.getElementById('category-filter').addEventListener('change', function () {
+    const val = this.value;
+    const filtered = val
+      ? allFeatures.filter(f => f.properties.category === val)
+      : allFeatures;
+    renderFeatures(filtered);
+  });
+
+  /* ── Fetch sites from API ──────────────────────────────── */
+  async function loadSites() {
+    try {
+      const res = await fetch('/api/sites/?format=json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const geojson = await res.json();
+      allFeatures = (geojson.features || []).filter(f => f.geometry && f.geometry.coordinates);
+      document.getElementById('loading').style.display = 'none';
+      renderFeatures(allFeatures);
+    } catch (err) {
+      document.getElementById('loading').innerHTML =
+        `<span style="font-size:1.5rem">⚠️</span>
+         <span style="color:#ff6b6b">Failed to load sites</span>
+         <span style="font-size:0.75rem;color:rgba(224,224,240,0.4)">${err.message}</span>
+         <button onclick="loadSites()"
+           style="margin-top:8px;padding:6px 14px;background:#e2c97e;border:none;
+                  border-radius:6px;cursor:pointer;font-weight:600;color:#1a1a2e">
+           Retry
+         </button>`;
+    }
+  }
+
+  loadSites();
+</script>
+</body>
+</html>
